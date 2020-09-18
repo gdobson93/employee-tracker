@@ -69,9 +69,27 @@ function startPrompt() {
     });
 }
 
-// will need some inquirer prompts
+let roleArr = [];
+function selectRole() {
+  connection.query("SELECT * FROM role", function(err, res) {
+    if (err) throw err;
+    for (var i = 0; i < res.length; i++) {
+      roleArr.push(res[i].title);
+    }
+  });
+  return roleArr;
+};
 
-// Add departments, roles, employees
+let managersArr = [];
+function selectManager() {
+  connection.query("SELECT first_name, last_name FROM employee WHERE manager_id IS NULL", function(err, res) {
+    if (err) throw err;
+    for (var i = 0; i < res.length; i++) {
+      managersArr.push(res[i].first_name);
+    };
+  });
+  return managersArr;
+};
 
 function addDept() {
   inquirer
@@ -127,27 +145,47 @@ function addRoles() {
 };
 
 function addEmployees() {
-  inquirer
-    .prompt({
-      name: "employeeName",
+  inquirer.prompt([
+    {
+      name: "firstname",
       type: "input",
-      message: "What employee do you want to add?"
-    })
-    .then(function(answer) {
-      const userInput = answer.employeeName
-      let query = "INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES (?)";
-      connection.query(query, userInput, function(err, res) {
-        if (err) throw err;
-        //viewEmployees();
-      });
+      message: "Enter their first name "
+    },
+    {
+      name: "lastname",
+      type: "input",
+      message: "Enter their last name "
+    },
+    {
+      name: "role",
+      type: "list",
+      message: "What is their role? ",
+      choices: selectRole()
+    },
+    {
+        name: "choice",
+        type: "rawlist",
+        message: "Whats their managers name?",
+        choices: selectManager()
+    }
+]).then(function (answer) {
+  var roleId = selectRole().indexOf(answer.role) + 1
+  var managerId = selectManager().indexOf(answer.choice) + 1
+  connection.query("INSERT INTO employee SET ?", 
+  {
+      first_name: answer.firstName,
+      last_name: answer.lastName,
+      manager_id: managerId,
+      role_id: roleId
+      
+  }, function(err){
+      if (err) throw err
+      console.table(answer)
+      startPrompt()
     });
+  });
 };
 
-//View departments, roles, employees
-// won't have inquirer 
-//look at LEFT JOINs
-
-//not working
 function viewDept() {
   connection.query("SELECT employee.first_name, employee.last_name, department.name AS Department FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id ORDER BY employee.id;", 
   
@@ -157,7 +195,6 @@ function viewDept() {
     startPrompt();
   })
 };
-
 
 function viewRoles() {
   connection.query("SELECT employee.first_name, employee.last_name, role.title AS Title FROM employee JOIN role ON employee.role_id = role.id;", 
@@ -179,8 +216,47 @@ function viewEmployees() {
       startPrompt();
   });
 };
-//Update employee roles
 
 function updateEmployees() {
+  connection.query("SELECT employee.last_name, role.title FROM employee JOIN role ON employee.role_id = role.id;", function(err, answer) {
 
+     if (err) throw err
+     console.log(answer)
+    inquirer.prompt([
+          {
+            name: "lastName",
+            type: "rawlist",
+            choices: function() {
+              var lastName = [];
+              for (var i = 0; i < answer.length; i++) {
+                lastName.push(answer[i].last_name);
+              }
+              return lastName;
+            },
+            message: "What is the Employee's last name? ",
+          },
+          {
+            name: "role",
+            type: "rawlist",
+            message: "What is the Employees new title? ",
+            choices: selectRole()
+          },
+      ]).then(function(res) {
+        var roleId = selectRole().indexOf(res.role) + 1
+        connection.query("UPDATE employee SET WHERE ?", 
+        {
+          last_name: res.lastName
+           
+        }, 
+        {
+          role_id: roleId
+           
+        }, 
+        function(err){
+            if (err) throw err;
+            console.table(res);
+            startPrompt()
+        });
+    });
+  });
 };
