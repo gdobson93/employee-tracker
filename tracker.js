@@ -80,17 +80,6 @@ function selectRole() {
   return roleArr;
 };
 
-let managersArr = [];
-function selectManager() {
-  connection.query("SELECT first_name, last_name FROM employee WHERE manager_id IS NULL", function(err, answer) {
-    if (err) throw err;
-    for (var i = 0; i < answer.length; i++) {
-      managersArr.push(answer[i].first_name);
-    };
-  });
-  return managersArr;
-};
-
 function addDept() {
   inquirer
     .prompt({
