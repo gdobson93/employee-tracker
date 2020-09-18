@@ -71,10 +71,10 @@ function startPrompt() {
 
 let roleArr = [];
 function selectRole() {
-  connection.query("SELECT * FROM role", function(err, res) {
+  connection.query("SELECT * FROM role", function(err, answer) {
     if (err) throw err;
-    for (var i = 0; i < res.length; i++) {
-      roleArr.push(res[i].title);
+    for (var i = 0; i < answer.length; i++) {
+      roleArr.push(answer[i].title);
     }
   });
   return roleArr;
@@ -82,10 +82,10 @@ function selectRole() {
 
 let managersArr = [];
 function selectManager() {
-  connection.query("SELECT first_name, last_name FROM employee WHERE manager_id IS NULL", function(err, res) {
+  connection.query("SELECT first_name, last_name FROM employee WHERE manager_id IS NULL", function(err, answer) {
     if (err) throw err;
-    for (var i = 0; i < res.length; i++) {
-      managersArr.push(res[i].first_name);
+    for (var i = 0; i < answer.length; i++) {
+      managersArr.push(answer[i].first_name);
     };
   });
   return managersArr;
@@ -113,7 +113,7 @@ function addDept() {
 };
 
 function addRoles() {
-  connection.query("SELECT role.title AS Title, role.salary AS Salary FROM role",   function(err, answer) {
+  connection.query("SELECT role.title AS Title, role.salary AS Salary FROM role",  function(err, answer) {
     inquirer.prompt([
         {
           name: "Title",
@@ -161,21 +161,13 @@ function addEmployees() {
       type: "list",
       message: "What is their role? ",
       choices: selectRole()
-    },
-    {
-        name: "choice",
-        type: "rawlist",
-        message: "Whats their managers name?",
-        choices: selectManager()
     }
 ]).then(function (answer) {
-  var roleId = selectRole().indexOf(answer.role) + 1
-  var managerId = selectManager().indexOf(answer.choice) + 1
+  let roleId = selectRole().indexOf(answer.role) + 1
   connection.query("INSERT INTO employee SET ?", 
   {
       first_name: answer.firstName,
       last_name: answer.lastName,
-      manager_id: managerId,
       role_id: roleId
       
   }, function(err){
@@ -225,7 +217,7 @@ function updateEmployees() {
     inquirer.prompt([
           {
             name: "lastName",
-            type: "rawlist",
+            type: "list",
             choices: function() {
               var lastName = [];
               for (var i = 0; i < answer.length; i++) {
@@ -237,15 +229,15 @@ function updateEmployees() {
           },
           {
             name: "role",
-            type: "rawlist",
+            type: "list",
             message: "What is the Employees new title? ",
             choices: selectRole()
           },
-      ]).then(function(res) {
-        var roleId = selectRole().indexOf(res.role) + 1
+      ]).then(function(answer) {
+        let roleId = selectRole().indexOf(answer.role) + 1
         connection.query("UPDATE employee SET WHERE ?", 
         {
-          last_name: res.lastName
+          last_name: answer.lastName
            
         }, 
         {
@@ -254,7 +246,7 @@ function updateEmployees() {
         }, 
         function(err){
             if (err) throw err;
-            console.table(res);
+            console.table(answer);
             startPrompt()
         });
     });
